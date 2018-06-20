@@ -249,6 +249,26 @@ Task("TestNetStandard20")
         RunDotnetCoreTests(dir + EXECUTABLE_NUNITLITE_TESTS_DLL, dir, runtime, ref ErrorDetail);
     });
 
+Task("Acceptance-uap10.0")
+    .WithCriteria(IsRunningOnWindows())
+    .Does(() =>
+    {
+        DeleteDirectories(new[]
+        {
+            "tests/Isolated package cache/nunit",
+            "tests/Isolated package cache/nunitlite"
+        }, new DeleteDirectorySettings { Recursive = true });
+
+        MSBuild("tests/uap10.0", new MSBuildSettings
+        {
+            WorkingDirectory = "tests/uap10.0",
+            Verbosity = Verbosity.Minimal,
+            Configuration = "Release",
+            PlatformTarget = PlatformTarget.x86,
+            Restore = true
+        });
+    });
+
 //////////////////////////////////////////////////////////////////////
 // PACKAGE
 //////////////////////////////////////////////////////////////////////
@@ -505,7 +525,12 @@ Task("Package")
     .Description("Packages all versions of the framework")
     .IsDependentOn("CheckForError")
     .IsDependentOn("PackageFramework")
+    .IsDependentOn("Acceptance")
     .IsDependentOn("PackageZip");
+
+Task("Acceptance")
+    .Description("Ensures that known project configurations can use the produced NuGet packages to restore, build, and run tests.")
+    .IsDependentOn("Acceptance-uap10.0");
 
 Task("Appveyor")
     .Description("Builds, tests and packages on AppVeyor")
